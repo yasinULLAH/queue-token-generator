@@ -508,6 +508,24 @@
                 }
             }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+    // Load saved values from localStorage if available
+    const inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        if (localStorage.getItem(input.id)) {
+            input.value = localStorage.getItem(input.id);
+        }
+    });
+
+    // Listen for changes in inputs and save them to localStorage
+    inputs.forEach(input => {
+        input.addEventListener('input', () => {
+            localStorage.setItem(input.id, input.value);
+        });
+    });
+});
+        
     </script>
 </body>
 </html>
