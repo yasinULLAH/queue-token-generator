@@ -151,6 +151,7 @@
                     <option value="arabic">Arabic-Indic (٠-٩)</option>
                     <option value="roman">Roman Numerals</option>
                     <option value="alphanumeric">Alphanumeric</option>
+                    <option value="urdu">Urdu Huroof Tahaji</option>
                 </select>
             </div>
             <div class="form-group">
@@ -227,6 +228,13 @@
 
         let currentEdit = null;
 
+        const urduLetters = [
+            'ا', 'ب', 'پ', 'ت', 'ٹ', 'ث', 'ج', 'چ', 'ح', 'خ',
+            'د', 'ڈ', 'ذ', 'ر', 'ڑ', 'ز', 'ژ', 'س', 'ش', 'ص',
+            'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل',
+            'م', 'ن', 'ں', 'و', 'ہ', 'ھ', 'ء', 'ی', 'ے'
+        ];
+
         function generateTokens() {
             const format = document.getElementById('tokenFormat').value;
             const total = parseInt(document.getElementById('totalTokens').value);
@@ -247,10 +255,13 @@
             const tokensPerPage = perRow * perPageRows;
             const totalPages = Math.ceil(total / tokensPerPage);
 
+            const isRTL = (format === 'arabic' || format === 'urdu');
+
             for(let p=0; p < totalPages; p++) {
                 const page = document.createElement('div');
                 page.className = 'page';
                 if(pageSize === 'legal') page.classList.add('legal-page');
+                page.style.direction = isRTL ? 'rtl' : 'ltr';
 
                 // Add Watermarks
                 if(watermarkText) {
@@ -288,6 +299,7 @@
                         const eventEl = document.createElement('div');
                         eventEl.className = 'event-name';
                         eventEl.textContent = eventName;
+                        eventEl.style.direction = isRTL ? 'rtl' : 'ltr';
                         tokenBox.appendChild(eventEl);
                     }
 
@@ -297,6 +309,7 @@
                         aboveEl.textContent = textAbove;
                         aboveEl.contentEditable = true;
                         aboveEl.spellcheck = false;
+                        aboveEl.style.direction = isRTL ? 'rtl' : 'ltr';
                         tokenBox.appendChild(aboveEl);
                     }
 
@@ -304,6 +317,7 @@
                     numberEl.className = 'number';
                     numberEl.style.fontSize = '24px';
                     numberEl.textContent = formatNumber(tokenNumber, format);
+                    numberEl.style.direction = isRTL ? 'rtl' : 'ltr';
                     tokenBox.appendChild(numberEl);
 
                     if(textBelow) {
@@ -312,6 +326,7 @@
                         belowEl.textContent = textBelow;
                         belowEl.contentEditable = true;
                         belowEl.spellcheck = false;
+                        belowEl.style.direction = isRTL ? 'rtl' : 'ltr';
                         tokenBox.appendChild(belowEl);
                     }
 
@@ -319,6 +334,7 @@
                         const guestEl = document.createElement('div');
                         guestEl.className = 'guest-name';
                         guestEl.textContent = guestName;
+                        guestEl.style.direction = isRTL ? 'rtl' : 'ltr';
                         tokenBox.appendChild(guestEl);
                     }
 
@@ -350,6 +366,8 @@
                     return toRoman(num);
                 case 'alphanumeric':
                     return toAlphanumeric(num);
+                case 'urdu':
+                    return toUrdu(num);
                 default:
                     return num;
             }
@@ -396,6 +414,18 @@
                 n = Math.floor((n-1)/26);
             }
             return str;
+        }
+
+        function toUrdu(num) {
+            const urduLetters = [
+                'ا', 'ب', 'پ', 'ت', 'ٹ', 'ث', 'ج', 'چ', 'ح', 'خ',
+                'د', 'ڈ', 'ذ', 'ر', 'ڑ', 'ز', 'ژ', 'س', 'ش', 'ص',
+                'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل',
+                'م', 'ن', 'ں', 'و', 'ہ', 'ھ', 'ء', 'ی', 'ے'
+            ];
+            const index = (num -1) % urduLetters.length;
+            const repeat = Math.floor((num -1) / urduLetters.length) +1;
+            return urduLetters[index].repeat(repeat);
         }
 
         async function exportPDF() {
