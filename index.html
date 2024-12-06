@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Queue Token Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="number"], select, input[type="color"], input[type="text"], textarea {
+            padding: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        #tokens {
+            margin-top: 30px;
+        }
+        .page {
+            width: 8.5in;
+            height: 11in;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            page-break-after: always;
+            overflow: hidden;
+            background-color: #fff;
+        }
+        .legal-page {
+            width: 8.5in;
+            height: 14in;
+        }
+        .watermark {
+            position: absolute;
+            opacity: 0.1;
+            font-size: 48px;
+            pointer-events: none;
+            user-select: none;
+            transform-origin: center;
+        }
+        .token-box {
+            border: 1px solid #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+            background-color: #fff;
+        }
+        .tokens-grid {
+            display: grid;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+        }
+        .token-box div {
+            margin: 2px 0;
+        }
+        .text-above, .text-below, .event-name, .guest-name {
+            cursor: text;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #tokens, #tokens * {
+                visibility: visible;
+            }
+            #tokens {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
+        /* Custom Context Menu */
+        .custom-context-menu {
+            position: absolute;
+            z-index: 1000;
+            width: 200px;
+            background: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            display: none;
+        }
+        .custom-context-menu ul {
+            list-style: none;
+            padding: 5px 0;
+            margin: 0;
+        }
+        .custom-context-menu li {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .custom-context-menu li:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Advanced Queue Token Generator</h1>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="tokenFormat">Token Format:</label>
+                <select id="tokenFormat">
+                    <option value="standard">Standard (0-9)</option>
+                    <option value="arabic">Arabic-Indic (٠-٩)</option>
+                    <option value="roman">Roman Numerals</option>
+                    <option value="alphanumeric">Alphanumeric</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="totalTokens">Number of Tokens:</label>
+                <input type="number" id="totalTokens" min="1" value="10">
+            </div>
+            <div class="form-group">
+                <label for="tokensPerRow">Tokens per Row:</label>
+                <input type="number" id="tokensPerRow" min="1" value="5">
+            </div>
+            <div class="form-group">
+                <label for="rowsPerPage">Rows per Page:</label>
+                <input type="number" id="rowsPerPage" min="1" value="10">
+            </div>
+            <div class="form-group">
+                <label for="pageSize">Page Size:</label>
+                <select id="pageSize">
+                    <option value="letter">Letter (8.5" x 11")</option>
+                    <option value="legal">Legal (8.5" x 14")</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="watermarkText">Watermark Text:</label>
+                <input type="text" id="watermarkText" placeholder="Enter watermark text">
+            </div>
+            <div class="form-group">
+                <label for="watermarkColor">Watermark Color:</label>
+                <input type="color" id="watermarkColor" value="#000000">
+            </div>
+            <div class="form-group">
+                <label for="watermarkCount">Watermarks per Page:</label>
+                <input type="number" id="watermarkCount" min="1" value="5">
+            </div>
+            <div class="form-group">
+                <label for="textAbove">Text Above Number:</label>
+                <textarea id="textAbove" placeholder="Enter static or repeating text above the number"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="textBelow">Text Below Number:</label>
+                <textarea id="textBelow" placeholder="Enter static or repeating text below the number"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="eventName">Event Name:</label>
+                <input type="text" id="eventName" placeholder="Enter event name">
+            </div>
+            <div class="form-group">
+                <label for="guestName">Guest Name:</label>
+                <input type="text" id="guestName" placeholder="Enter guest name">
+            </div>
+        </div>
+        <div id="button-group">
+            <button id="generateBtn">Generate Tokens</button>
+            <button id="exportBtn">Export to PDF</button>
+        </div>
+        <div id="tokens"></div>
+    </div>
+
+    <!-- Custom Context Menu -->
+    <div class="custom-context-menu" id="contextMenu">
+        <ul>
+            <li data-action="repeat-above">Repeat Text Above</li>
+            <li data-action="repeat-below">Repeat Text Below</li>
+        </ul>
+    </div>
+
+    <!-- jsPDF and html2canvas CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const { jsPDF } = window.jspdf;
+
+        document.getElementById('generateBtn').addEventListener('click', generateTokens);
+        document.getElementById('exportBtn').addEventListener('click', exportPDF);
+
+        let currentEdit = null;
+
+        function generateTokens() {
+            const format = document.getElementById('tokenFormat').value;
+            const total = parseInt(document.getElementById('totalTokens').value);
+            const perRow = parseInt(document.getElementById('tokensPerRow').value);
+            const perPageRows = parseInt(document.getElementById('rowsPerPage').value);
+            const pageSize = document.getElementById('pageSize').value;
+            const watermarkText = document.getElementById('watermarkText').value;
+            const watermarkColor = document.getElementById('watermarkColor').value;
+            const watermarkCount = parseInt(document.getElementById('watermarkCount').value);
+            const textAbove = document.getElementById('textAbove').value;
+            const textBelow = document.getElementById('textBelow').value;
+            const eventName = document.getElementById('eventName').value;
+            const guestName = document.getElementById('guestName').value;
+
+            const tokensContainer = document.getElementById('tokens');
+            tokensContainer.innerHTML = '';
+
+            const tokensPerPage = perRow * perPageRows;
+            const totalPages = Math.ceil(total / tokensPerPage);
+
+            for(let p=0; p < totalPages; p++) {
+                const page = document.createElement('div');
+                page.className = 'page';
+                if(pageSize === 'legal') page.classList.add('legal-page');
+
+                // Add Watermarks
+                if(watermarkText) {
+                    for(let w=0; w < watermarkCount; w++) {
+                        const watermark = document.createElement('div');
+                        watermark.className = 'watermark';
+                        watermark.style.color = watermarkColor;
+                        watermark.textContent = watermarkText;
+                        // Random position and rotation
+                        const angle = Math.random() * 360;
+                        const posX = Math.random() * 100;
+                        const posY = Math.random() * 100;
+                        watermark.style.left = `${posX}%`;
+                        watermark.style.top = `${posY}%`;
+                        watermark.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+                        page.appendChild(watermark);
+                    }
+                }
+
+                const grid = document.createElement('div');
+                grid.className = 'tokens-grid';
+                grid.style.gridTemplateColumns = `repeat(${perRow}, 1fr)`;
+                grid.style.gridTemplateRows = `repeat(${perPageRows}, 1fr)`;
+
+                for(let i=0; i < tokensPerPage; i++) {
+                    const tokenNumber = p * tokensPerPage + i + 1;
+                    if(tokenNumber > total) break;
+
+                    const tokenBox = document.createElement('div');
+                    tokenBox.className = 'token-box';
+
+                    tokenBox.dataset.tokenNumber = tokenNumber;
+
+                    if(eventName) {
+                        const eventEl = document.createElement('div');
+                        eventEl.className = 'event-name';
+                        eventEl.textContent = eventName;
+                        tokenBox.appendChild(eventEl);
+                    }
+
+                    if(textAbove) {
+                        const aboveEl = document.createElement('div');
+                        aboveEl.className = 'text-above';
+                        aboveEl.textContent = textAbove;
+                        aboveEl.contentEditable = true;
+                        aboveEl.spellcheck = false;
+                        tokenBox.appendChild(aboveEl);
+                    }
+
+                    const numberEl = document.createElement('div');
+                    numberEl.className = 'number';
+                    numberEl.style.fontSize = '24px';
+                    numberEl.textContent = formatNumber(tokenNumber, format);
+                    tokenBox.appendChild(numberEl);
+
+                    if(textBelow) {
+                        const belowEl = document.createElement('div');
+                        belowEl.className = 'text-below';
+                        belowEl.textContent = textBelow;
+                        belowEl.contentEditable = true;
+                        belowEl.spellcheck = false;
+                        tokenBox.appendChild(belowEl);
+                    }
+
+                    if(guestName) {
+                        const guestEl = document.createElement('div');
+                        guestEl.className = 'guest-name';
+                        guestEl.textContent = guestName;
+                        tokenBox.appendChild(guestEl);
+                    }
+
+                    // Add event listeners for context menu
+                    const editableElements = tokenBox.querySelectorAll('.text-above, .text-below');
+                    editableElements.forEach(el => {
+                        el.addEventListener('contextmenu', function(e) {
+                            e.preventDefault();
+                            currentEdit = el;
+                            showContextMenu(e.pageX, e.pageY);
+                        });
+                    });
+
+                    grid.appendChild(tokenBox);
+                }
+
+                page.appendChild(grid);
+                tokensContainer.appendChild(page);
+            }
+        }
+
+        function formatNumber(num, format) {
+            switch(format) {
+                case 'standard':
+                    return num;
+                case 'arabic':
+                    return toArabicIndic(num);
+                case 'roman':
+                    return toRoman(num);
+                case 'alphanumeric':
+                    return toAlphanumeric(num);
+                default:
+                    return num;
+            }
+        }
+
+        function toArabicIndic(num) {
+            const standard = ['0','1','2','3','4','5','6','7','8','9'];
+            const arabicIndic = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+            return num.toString().split('').map(d => arabicIndic[parseInt(d)] || d).join('');
+        }
+
+        function toRoman(num) {
+            const romans = [
+                {value:1000, numeral:"M"},
+                {value:900, numeral:"CM"},
+                {value:500, numeral:"D"},
+                {value:400, numeral:"CD"},
+                {value:100, numeral:"C"},
+                {value:90, numeral:"XC"},
+                {value:50, numeral:"L"},
+                {value:40, numeral:"XL"},
+                {value:10, numeral:"X"},
+                {value:9, numeral:"IX"},
+                {value:5, numeral:"V"},
+                {value:4, numeral:"IV"},
+                {value:1, numeral:"I"}
+            ];
+            let result = '';
+            for(const {value, numeral} of romans) {
+                while(num >= value){
+                    result += numeral;
+                    num -= value;
+                }
+            }
+            return result;
+        }
+
+        function toAlphanumeric(num) {
+            let str = '';
+            let n = num;
+            while(n > 0){
+                let rem = (n-1) % 26;
+                str = String.fromCharCode(65 + rem) + str;
+                n = Math.floor((n-1)/26);
+            }
+            return str;
+        }
+
+        async function exportPDF() {
+            const tokensContainer = document.getElementById('tokens');
+            const pages = tokensContainer.querySelectorAll('.page');
+            if(pages.length === 0){
+                alert('Please generate tokens first.');
+                return;
+            }
+
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'in',
+                format: pages[0].classList.contains('legal-page') ? 'legal' : 'letter'
+            });
+
+            for(let i=0; i < pages.length; i++) {
+                const canvas = await html2canvas(pages[i], { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = doc.getImageProperties(imgData);
+                const pdfWidth = doc.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                if(i < pages.length -1){
+                    doc.addPage();
+                }
+            }
+
+            doc.save('queue_tokens.pdf');
+        }
+
+        // Custom Context Menu
+        const contextMenu = document.getElementById('contextMenu');
+
+        function showContextMenu(x, y) {
+            contextMenu.style.top = `${y}px`;
+            contextMenu.style.left = `${x}px`;
+            contextMenu.style.display = 'block';
+        }
+
+        document.addEventListener('click', function(e) {
+            if(e.button !== 2){
+                contextMenu.style.display = 'none';
+            }
+        });
+
+        contextMenu.addEventListener('click', function(e) {
+            if(e.target.tagName === 'LI') {
+                const action = e.target.dataset.action;
+                if(currentEdit) {
+                    if(action === 'repeat-above') {
+                        repeatText(currentEdit, 'above');
+                    } else if(action === 'repeat-below') {
+                        repeatText(currentEdit, 'below');
+                    }
+                }
+                contextMenu.style.display = 'none';
+            }
+        });
+
+        function repeatText(element, direction) {
+            const allElements = Array.from(document.querySelectorAll('.text-above, .text-below'));
+            const currentIndex = allElements.indexOf(element);
+            if(currentIndex === -1) return;
+
+            let textToRepeat = element.textContent;
+            if(!textToRepeat.trim()) return;
+
+            if(direction === 'above') {
+                for(let i = currentIndex +1; i < allElements.length; i++) {
+                    if(allElements[i].classList.contains('text-above')) {
+                        allElements[i].textContent = textToRepeat;
+                    }
+                }
+            } else if(direction === 'below') {
+                for(let i = currentIndex +1; i < allElements.length; i++) {
+                    if(allElements[i].classList.contains('text-below')) {
+                        allElements[i].textContent = textToRepeat;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
